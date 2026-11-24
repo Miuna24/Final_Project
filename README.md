@@ -4,6 +4,8 @@ A shared drawing gallery with separate pages. Keep `/` open on the forest displa
 
 The main display is a wordless woodland scene where drawings drift around the screen. New drawings use transparent backgrounds so their marks blend into the environment.
 
+The drawing page includes pen, marker, spray, glow, and eraser brushes; line, rectangle, ellipse, and triangle tools; a fill bucket; and gradient strokes and shape fills.
+
 ## Run it
 
 1. In this folder, run `npm install`.
