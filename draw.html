@@ -72,6 +72,33 @@
     .tool-hint { min-height: 20px; margin: 3px 0 12px; color: var(--muted); font-size: 13px; }
     .notice { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
     [hidden] { display: none !important; }
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 100vh;
+      padding: 28px;
+      border: 0;
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+      text-align: center;
+      opacity: 1;
+      transition: opacity 700ms ease;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    .welcome-overlay:focus-visible { outline: 3px solid var(--green); outline-offset: -8px; }
+    .welcome-content { display: grid; max-width: 720px; justify-items: center; gap: 18px; }
+    .welcome-quote { font-size: clamp(32px, 8vw, 64px); font-weight: 650; letter-spacing: -.045em; line-height: 1.12; }
+    .welcome-attribution { color: var(--muted); font-size: 17px; }
+    .welcome-hint { margin-top: 20px; color: var(--green); font-size: 14px; }
+    .welcome-overlay.is-dismissed { pointer-events: none; opacity: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      .welcome-overlay { transition: none; }
+    }
     @media (max-width: 560px) {
       .topbar { padding: 13px 16px; }
       .connection { font-size: 12px; }
@@ -83,6 +110,13 @@
   </style>
 </head>
 <body>
+  <button id="welcome-overlay" class="welcome-overlay" type="button">
+    <span class="welcome-content">
+      <span class="welcome-quote">“Everything you can imagine is real.”</span>
+      <span class="welcome-attribution">– Pablo Picasso</span>
+      <span class="welcome-hint">Tap anywhere to begin</span>
+    </span>
+  </button>
   <header class="topbar">
     <div class="brand"><span class="brand-mark" aria-hidden="true">✳</span> Little Big Gallery</div>
     <div class="top-actions">
@@ -162,6 +196,7 @@
       const size = document.getElementById("brush-size");
       const toolHint = document.getElementById("tool-hint");
       const notice = document.getElementById("draw-notice");
+      const welcomeOverlay = document.getElementById("welcome-overlay");
       let socket;
       let drawing = false;
       let startPoint = null;
@@ -491,6 +526,17 @@
       brushType.addEventListener("change", updateToolControls);
       shapeStyle.addEventListener("change", updateToolControls);
       updateToolControls();
+
+      welcomeOverlay.addEventListener("click", function () {
+        welcomeOverlay.classList.add("is-dismissed");
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          welcomeOverlay.hidden = true;
+          return;
+        }
+        window.setTimeout(function () {
+          welcomeOverlay.hidden = true;
+        }, 700);
+      }, { once: true });
 
       document.getElementById("clear-button").addEventListener("click", function () {
         clearCanvas();
