@@ -2,6 +2,8 @@
 
 A small shared drawing page. Open the gallery on the main screen and `/draw` on each participant's device. Drawings appear in the gallery when someone chooses **Add to gallery**.
 
+The main display is a wordless woodland scene where drawings drift around the screen. New drawings use transparent backgrounds so their marks blend into the environment.
+
 ## Run it
 
 1. In this folder, run `npm install`.

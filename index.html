@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f4f0">
+  <meta name="theme-color" content="#10232a">
   <title>Little Big Gallery</title>
   <style>
     :root {
@@ -55,34 +55,83 @@
     .primary-button { background: var(--green); color: white; }
     .primary-button:hover { background: var(--green-dark); }
 
-    body.gallery-mode { overflow: hidden; background: #fff; }
+    body.gallery-mode { overflow: hidden; background: #0c211d; }
     body.gallery-mode .topbar { display: none; }
-    body.gallery-mode #gallery-view { width: 100%; height: 100vh; height: 100dvh; margin: 0; padding: 0; }
-    body.gallery-mode .gallery {
-      display: grid;
+    body.gallery-mode #gallery-view {
+      position: fixed;
+      inset: 0;
       width: 100%;
-      height: 100%;
-      grid-template-columns: repeat(var(--columns, 1), minmax(0, 1fr));
-      grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr));
+      height: 100vh;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
+      background:
+        radial-gradient(ellipse at 52% 72%, rgba(191, 157, 90, .2), transparent 42%),
+        radial-gradient(ellipse at 78% 27%, rgba(93, 154, 143, .2), transparent 43%),
+        linear-gradient(180deg, #10232a 0%, #15342d 52%, #183b2c 100%);
     }
-    .artwork { display: grid; min-width: 0; min-height: 0; place-items: center; margin: 0; animation: artwork-arrives 650ms cubic-bezier(.2, .8, .2, 1) both; }
+    .forest-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .forest-landscape { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .forest-mist {
+      position: absolute;
+      right: -15%;
+      bottom: 8%;
+      left: -15%;
+      height: 31%;
+      background: radial-gradient(ellipse, rgba(174, 193, 145, .16), transparent 68%);
+      filter: blur(26px);
+      animation: mist-drifts 18s ease-in-out infinite alternate;
+    }
+    .firefly {
+      position: absolute;
+      top: var(--fly-y);
+      left: var(--fly-x);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #f2d891;
+      box-shadow: 0 0 8px 2px rgba(245, 220, 147, .68), 0 0 24px 6px rgba(225, 197, 118, .22);
+      opacity: .2;
+      animation: firefly-wanders var(--fly-duration, 7s) ease-in-out var(--fly-delay, 0s) infinite alternate;
+    }
+    #gallery { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .artwork {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      opacity: 0;
+      will-change: transform;
+      animation: artwork-arrives 1.1s cubic-bezier(.2, .8, .2, 1) forwards;
+    }
     .art-image {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: contain;
-      filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .08));
-      animation: artwork-dances var(--dance-duration, 3s) ease-in-out 650ms infinite alternate;
+      filter: drop-shadow(0 0 12px rgba(177, 219, 170, .22)) drop-shadow(0 9px 15px rgba(0, 0, 0, .22));
+      animation: artwork-breathes var(--breath-duration, 4s) ease-in-out infinite alternate;
     }
     @keyframes artwork-arrives {
-      from { opacity: 0; transform: scale(.35) rotate(-16deg); }
-      75% { transform: scale(1.08) rotate(7deg); }
-      to { opacity: 1; transform: scale(1) rotate(0); }
+      from { opacity: 0; scale: .55; }
+      72% { scale: 1.08; }
+      to { opacity: 1; scale: 1; }
     }
-    @keyframes artwork-dances {
-      from { transform: translate(var(--dance-x-start), var(--dance-y-start)) rotate(var(--dance-angle-start)) scale(.97); }
-      to { transform: translate(var(--dance-x-end), var(--dance-y-end)) rotate(var(--dance-angle-end)) scale(1.04); }
+    @keyframes artwork-breathes {
+      from { transform: rotate(-2deg) scale(.96); }
+      to { transform: rotate(2deg) scale(1.03); }
+    }
+    @keyframes firefly-wanders {
+      0% { opacity: .12; transform: translate3d(-12px, 8px, 0) scale(.7); }
+      45% { opacity: .9; }
+      100% { opacity: .25; transform: translate3d(20px, -26px, 0) scale(1.25); }
+    }
+    @keyframes mist-drifts {
+      from { transform: translateX(-4%) scaleX(.9); opacity: .45; }
+      to { transform: translateX(4%) scaleX(1.08); opacity: .85; }
     }
 
     main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 64px 0 80px; }
@@ -108,6 +157,11 @@
     .notice { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
     [hidden] { display: none !important; }
 
+    @media (prefers-reduced-motion: reduce) {
+      .artwork, .art-image, .firefly, .forest-mist { animation: none !important; }
+      .artwork { opacity: 1; }
+    }
+
     @media (max-width: 560px) {
       .topbar { padding: 13px 16px; }
       .connection { font-size: 12px; }
@@ -132,6 +186,47 @@
   </header>
 
   <main id="gallery-view" aria-label="Live drawing gallery">
+    <div class="forest-scene" aria-hidden="true">
+      <svg class="forest-landscape" viewBox="0 0 1600 900" preserveAspectRatio="none">
+        <defs>
+          <radialGradient id="woodland-lantern" cx="52%" cy="59%" r="52%">
+            <stop offset="0" stop-color="#b39a5d" stop-opacity=".24"></stop>
+            <stop offset="1" stop-color="#b39a5d" stop-opacity="0"></stop>
+          </radialGradient>
+          <linearGradient id="woodland-ridge" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#264b3c"></stop>
+            <stop offset="1" stop-color="#163328"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="1600" height="900" fill="url(#woodland-lantern)"></rect>
+        <path d="M0 560 Q180 470 365 555 T750 535 T1130 555 T1600 495 V900 H0Z" fill="#244637" opacity=".52"></path>
+        <path d="M0 650 Q210 555 440 645 T850 630 T1240 650 T1600 585 V900 H0Z" fill="url(#woodland-ridge)" opacity=".86"></path>
+        <g fill="#18372c" opacity=".82">
+            <path d="M-95 460 Q-15 365 75 440 Q160 315 272 420 Q386 337 492 437 Q560 390 625 475 L625 655 Q355 590 145 670 L-95 640Z"></path>
+            <path d="M975 470 Q1052 370 1140 445 Q1230 315 1340 425 Q1450 340 1535 438 Q1600 390 1685 466 V650 Q1430 600 1225 668 L975 620Z"></path>
+        </g>
+        <g fill="#10281f">
+          <path d="M-70 900 Q35 710 70 478 Q96 270 42 -45 L155 -45 Q132 205 193 390 Q228 520 254 900Z"></path>
+          <path d="M95 265 Q220 185 265 52 L320 70 Q285 223 160 322Z"></path>
+          <path d="M1610 900 Q1535 710 1510 478 Q1482 268 1555 -45 L1438 -45 Q1450 206 1387 405 Q1350 540 1330 900Z"></path>
+          <path d="M1503 270 Q1380 178 1347 48 L1290 66 Q1320 222 1440 324Z"></path>
+        </g>
+        <g fill="#0b211b" opacity=".88">
+          <path d="M0 0 H280 Q263 74 188 85 Q138 168 48 137 Q32 214 0 233Z"></path>
+          <path d="M1600 0 H1310 Q1335 76 1410 88 Q1475 165 1550 135 Q1572 211 1600 226Z"></path>
+          <path d="M0 760 Q160 690 315 770 Q410 730 510 790 V900 H0Z"></path>
+          <path d="M1600 742 Q1435 688 1295 770 Q1185 730 1080 790 V900 H1600Z"></path>
+        </g>
+      </svg>
+      <div class="forest-mist"></div>
+      <span class="firefly" style="--fly-x: 14%; --fly-y: 43%; --fly-delay: -2s; --fly-duration: 8s"></span>
+      <span class="firefly" style="--fly-x: 28%; --fly-y: 65%; --fly-delay: -5s; --fly-duration: 11s"></span>
+      <span class="firefly" style="--fly-x: 41%; --fly-y: 34%; --fly-delay: -1s; --fly-duration: 9s"></span>
+      <span class="firefly" style="--fly-x: 58%; --fly-y: 61%; --fly-delay: -7s; --fly-duration: 12s"></span>
+      <span class="firefly" style="--fly-x: 72%; --fly-y: 41%; --fly-delay: -3s; --fly-duration: 10s"></span>
+      <span class="firefly" style="--fly-x: 84%; --fly-y: 68%; --fly-delay: -6s; --fly-duration: 8s"></span>
+      <span class="firefly" style="--fly-x: 91%; --fly-y: 31%; --fly-delay: -4s; --fly-duration: 11s"></span>
+    </div>
     <div id="gallery" class="gallery" aria-live="polite"></div>
   </main>
 
@@ -145,7 +240,7 @@
       <input id="artist-name" class="name-input" maxlength="24" placeholder="Your name (optional)" aria-label="Your name, optional">
       <div class="canvas-wrap"><canvas id="drawing-canvas" width="800" height="600" aria-label="Drawing canvas"></canvas></div>
       <div class="tools">
-        <label class="tool-group" for="brush-color">Color <input id="brush-color" type="color" value="#20231f"></label>
+        <label class="tool-group" for="brush-color">Color <input id="brush-color" type="color" value="#f4e6bd"></label>
         <label class="tool-group" for="brush-size">Brush <input id="brush-size" type="range" min="2" max="28" value="6"></label>
         <button id="clear-button" class="secondary-button" type="button">Clear</button>
       </div>
@@ -165,6 +260,8 @@
       const connectionLabel = document.getElementById("connection-label");
       let socket;
       let currentDrawings = [];
+      const activeArtworks = new Map();
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       galleryView.hidden = drawingMode;
       drawView.hidden = !drawingMode;
@@ -195,7 +292,7 @@
             console.error("Could not read gallery update:", error);
             return;
           }
-          if (message.type === "gallery") renderGallery(message.drawings);
+          if (message.type === "gallery" && !drawingMode) renderGallery(message.drawings);
           if (message.type === "added") {
             if (drawingMode) {
               const notice = document.getElementById("draw-notice");
@@ -215,16 +312,10 @@
         const existing = new Map(Array.from(gallery.children).map(function (artwork) {
           return [artwork.dataset.artKey, artwork];
         }));
-        const columns = drawings.length < 2
-          ? 1
-          : Math.max(1, Math.ceil(Math.sqrt(drawings.length * window.innerWidth / window.innerHeight)));
-        const rows = Math.max(1, Math.ceil(drawings.length / columns));
-        gallery.style.setProperty("--columns", columns);
-        gallery.style.setProperty("--rows", rows);
-
         drawings.forEach(function (drawing) {
           const key = drawing.createdAt + ":" + drawing.image;
           let artwork = existing.get(key);
+          let state = activeArtworks.get(key);
           if (artwork) {
             existing.delete(key);
           } else {
@@ -235,33 +326,112 @@
             image.className = "art-image";
             image.src = drawing.image;
             image.alt = "Drawing by " + drawing.name;
-            const shiftX = Math.round(window.innerWidth * (.006 + Math.random() * .006));
-            const shiftY = Math.round(window.innerHeight * (.006 + Math.random() * .006));
-            const angle = 2 + Math.random() * 4;
-            image.style.setProperty("--dance-duration", (2.4 + Math.random() * 2.2) + "s");
-            image.style.setProperty("--dance-x-start", -shiftX + "px");
-            image.style.setProperty("--dance-y-start", -shiftY + "px");
-            image.style.setProperty("--dance-angle-start", -angle + "deg");
-            image.style.setProperty("--dance-x-end", shiftX + "px");
-            image.style.setProperty("--dance-y-end", shiftY + "px");
-            image.style.setProperty("--dance-angle-end", angle + "deg");
+            image.style.setProperty("--breath-duration", (3.4 + Math.random() * 2.8) + "s");
             artwork.append(image);
+            const imageWidth = getArtworkWidth(drawings.length);
+            state = createArtworkState(artwork, image, imageWidth);
+            activeArtworks.set(key, state);
           }
 
           const currentImage = artwork.querySelector("img");
-          const cellWidth = window.innerWidth / columns;
-          const cellHeight = window.innerHeight / rows;
-          const imageWidth = Math.min(480, cellWidth * .72, cellHeight * 4 / 3 * .72);
+          const imageWidth = getArtworkWidth(drawings.length);
           currentImage.style.width = imageWidth + "px";
           currentImage.style.height = imageWidth * .75 + "px";
+          artwork.style.width = imageWidth + "px";
+          artwork.style.height = imageWidth * .75 + "px";
+          state.width = imageWidth;
+          state.height = imageWidth * .75;
+          state.x = clamp(state.x, state.width / 2, window.innerWidth - state.width / 2);
+          state.y = clamp(state.y, state.height / 2, window.innerHeight - state.height / 2);
           gallery.append(artwork);
         });
-        existing.forEach(function (artwork) { artwork.remove(); });
+        existing.forEach(function (artwork, key) {
+          artwork.remove();
+          activeArtworks.delete(key);
+        });
+      }
+
+      function getArtworkWidth(count) {
+        const areaPerDrawing = Math.sqrt((window.innerWidth * window.innerHeight) / Math.max(count, 1));
+        return Math.max(48, Math.min(
+          window.innerWidth < 560 ? 230 : 340,
+          areaPerDrawing * .44,
+          window.innerWidth * .42
+        ));
+      }
+
+      function createArtworkState(element, image, width) {
+        const height = width * .75;
+        const edgeX = Math.min(width * .65, window.innerWidth * .35);
+        const edgeY = Math.min(height * .65, window.innerHeight * .35);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 10 + Math.random() * 15;
+        return {
+          element: element,
+          image: image,
+          width: width,
+          height: height,
+          x: edgeX + Math.random() * Math.max(0, window.innerWidth - edgeX * 2),
+          y: edgeY + Math.random() * Math.max(0, window.innerHeight - edgeY * 2),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          targetAngle: angle,
+          targetSpeed: speed,
+          turnIn: 1.5 + Math.random() * 3,
+          phase: Math.random() * Math.PI * 2
+        };
+      }
+
+      function clamp(value, minimum, maximum) {
+        return Math.max(minimum, Math.min(maximum, value));
+      }
+
+      let previousFrame = 0;
+      function updateArtworkMotion(timestamp) {
+        const delta = previousFrame ? Math.min((timestamp - previousFrame) / 1000, .05) : 0;
+        previousFrame = timestamp;
+
+        activeArtworks.forEach(function (state) {
+          const minX = state.width / 2;
+          const maxX = Math.max(minX, window.innerWidth - state.width / 2);
+          const minY = state.height / 2;
+          const maxY = Math.max(minY, window.innerHeight - state.height / 2);
+          state.turnIn -= delta;
+          if (state.turnIn <= 0) {
+            state.targetAngle += (Math.random() - .5) * 1.8;
+            state.targetSpeed = 9 + Math.random() * 17;
+            state.turnIn = 2 + Math.random() * 4;
+          }
+
+          const easing = 1 - Math.exp(-.42 * delta);
+          const targetVx = Math.cos(state.targetAngle) * state.targetSpeed;
+          const targetVy = Math.sin(state.targetAngle) * state.targetSpeed;
+          state.vx += (targetVx - state.vx) * easing;
+          state.vy += (targetVy - state.vy) * easing;
+          state.x += state.vx * delta;
+          state.y += state.vy * delta;
+
+          if (state.x < minX || state.x > maxX) {
+            state.x = clamp(state.x, minX, maxX);
+            state.vx *= -1;
+            state.targetAngle = Math.PI - state.targetAngle;
+          }
+          if (state.y < minY || state.y > maxY) {
+            state.y = clamp(state.y, minY, maxY);
+            state.vy *= -1;
+            state.targetAngle = -state.targetAngle;
+          }
+
+          const tilt = Math.sin(timestamp * .00055 + state.phase) * 2.5;
+          state.element.style.transform = "translate3d(" + state.x + "px, " + state.y + "px, 0) translate(-50%, -50%) rotate(" + tilt + "deg)";
+        });
+        requestAnimationFrame(updateArtworkMotion);
       }
 
       connect();
       if (!drawingMode) {
         window.addEventListener("resize", function () { renderGallery(currentDrawings); });
+        if (!reducedMotion) requestAnimationFrame(updateArtworkMotion);
         return;
       }
 
@@ -273,9 +443,6 @@
       let drawing = false;
       context.lineCap = "round";
       context.lineJoin = "round";
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
       function point(event) {
         const bounds = canvas.getBoundingClientRect();
         return {
@@ -310,8 +477,7 @@
       canvas.addEventListener("lostpointercapture", stopDrawing);
 
       function clearCanvas() {
-        context.fillStyle = "#ffffff";
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.clearRect(0, 0, canvas.width, canvas.height);
       }
 
       document.getElementById("clear-button").addEventListener("click", function () {
