@@ -67,7 +67,8 @@
     #brush-size { width: 100%; min-height: 38px; accent-color: var(--green); }
     .draw-actions { display: flex; gap: 10px; }
     .draw-actions button { min-height: 46px; }
-    #clear-button { padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: white; color: var(--ink); }
+    #clear-button, #undo-button { padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: white; color: var(--ink); }
+    #undo-button:disabled { cursor: not-allowed; opacity: .5; }
     #add-button { flex: 1; }
     .tool-hint { min-height: 20px; margin: 3px 0 12px; color: var(--muted); font-size: 13px; }
     .notice { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
@@ -175,6 +176,7 @@
       <p id="tool-hint" class="tool-hint" aria-live="polite"></p>
       <div class="draw-actions">
         <button id="clear-button" type="button">Clear</button>
+        <button id="undo-button" type="button" disabled>Undo</button>
         <button id="add-button" class="primary-button" type="button">Add to forest</button>
       </div>
       <p id="draw-notice" class="notice" aria-live="polite"></p>
@@ -186,7 +188,7 @@
       const connectionDot = document.getElementById("connection-dot");
       const connectionLabel = document.getElementById("connection-label");
       const canvas = document.getElementById("drawing-canvas");
-      const context = canvas.getContext("2d");
+      const context = canvas.getContext("2d", { willReadFrequently: true });
       const toolMode = document.getElementById("tool-mode");
       const brushType = document.getElementById("brush-type");
       const shapeStyle = document.getElementById("shape-style");
@@ -197,6 +199,9 @@
       const toolHint = document.getElementById("tool-hint");
       const notice = document.getElementById("draw-notice");
       const welcomeOverlay = document.getElementById("welcome-overlay");
+      const undoButton = document.getElementById("undo-button");
+      const undoHistory = [];
+      const maxUndoSteps = 10;
       let socket;
       let drawing = false;
       let startPoint = null;
@@ -229,7 +234,8 @@
             return;
           }
           if (message.type === "added") {
-            clearCanvas();
+            clearCanvas(false);
+            clearUndoHistory();
             notice.textContent = "Added to the forest — make another whenever you like!";
           }
           if (message.type === "error") notice.textContent = message.message;
@@ -438,6 +444,7 @@
             target[2] === replacement[2] &&
             target[3] === replacement[3]) return;
 
+        const undoSnapshot = new ImageData(new Uint8ClampedArray(pixels), canvas.width, canvas.height);
         const visited = new Uint8Array(canvas.width * canvas.height);
         const queue = new Uint32Array(canvas.width * canvas.height);
         let head = 0;
@@ -465,6 +472,7 @@
           if (index + canvas.width < visited.length) enqueue(index + canvas.width);
         }
         context.putImageData(image, 0, 0);
+        saveUndoState(undoSnapshot);
         notice.textContent = "Filled area.";
       }
 
@@ -479,9 +487,9 @@
         canvas.setPointerCapture(event.pointerId);
         startPoint = position;
         previousPoint = position;
+        canvasSnapshot = context.getImageData(0, 0, canvas.width, canvas.height);
         notice.textContent = "";
         if (toolMode.value === "gradient" || isShapeTool(toolMode.value) || toolMode.value === "line") {
-          canvasSnapshot = context.getImageData(0, 0, canvas.width, canvas.height);
           previewTool(position);
         } else {
           drawBrushSegment(position, { x: position.x + .1, y: position.y + .1 });
@@ -505,6 +513,7 @@
         if (toolMode.value === "gradient" || isShapeTool(toolMode.value) || toolMode.value === "line") {
           previewTool(position);
         }
+        saveUndoState(canvasSnapshot);
         drawing = false;
         canvasSnapshot = null;
       }
@@ -518,10 +527,42 @@
       canvas.addEventListener("pointercancel", cancelDrawing);
       canvas.addEventListener("lostpointercapture", cancelDrawing);
 
-      function clearCanvas() {
+      function saveUndoState(snapshot) {
+        undoHistory.push(snapshot);
+        if (undoHistory.length > maxUndoSteps) undoHistory.shift();
+        updateUndoButton();
+      }
+
+      function updateUndoButton() {
+        undoButton.disabled = undoHistory.length === 0;
+      }
+
+      function clearUndoHistory() {
+        undoHistory.length = 0;
+        updateUndoButton();
+      }
+
+      function undoCanvas() {
+        const snapshot = undoHistory.pop();
+        if (!snapshot) return;
+        context.putImageData(snapshot, 0, 0);
+        updateUndoButton();
+      }
+
+      function clearCanvas(undoable) {
+        if (undoable) {
+          const snapshot = context.getImageData(0, 0, canvas.width, canvas.height);
+          for (let alpha = 3; alpha < snapshot.data.length; alpha += 4) {
+            if (snapshot.data[alpha] !== 0) {
+              saveUndoState(snapshot);
+              break;
+            }
+          }
+        }
         context.clearRect(0, 0, canvas.width, canvas.height);
       }
 
+      updateUndoButton();
       toolMode.addEventListener("change", updateToolControls);
       brushType.addEventListener("change", updateToolControls);
       shapeStyle.addEventListener("change", updateToolControls);
@@ -539,9 +580,10 @@
       }, { once: true });
 
       document.getElementById("clear-button").addEventListener("click", function () {
-        clearCanvas();
+        clearCanvas(true);
         notice.textContent = "";
       });
+      undoButton.addEventListener("click", undoCanvas);
       document.getElementById("add-button").addEventListener("click", function () {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
           notice.textContent = "Not connected yet. Please try again in a moment.";
