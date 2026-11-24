@@ -7,29 +7,36 @@ const PORT = Number(process.env.PORT) || 3000;
 const MAX_DRAWINGS = 200;
 const MAX_MESSAGE_BYTES = 5 * 1024 * 1024;
 const indexPath = path.join(__dirname, "index.html");
+const drawPath = path.join(__dirname, "draw.html");
 const drawings = [];
 
 const server = http.createServer((request, response) => {
-  const pathname = new URL(request.url, "http://localhost").pathname;
-  if (pathname === "/" || pathname === "/draw") {
-    fs.readFile(indexPath, (error, content) => {
-      if (error) {
-        response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
-        response.end("Could not load the drawing page.");
-        console.error("Failed to read index.html:", error);
-        return;
-      }
-      response.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store",
-        "X-Content-Type-Options": "nosniff"
-      });
-      response.end(content);
-    });
+  const pathname = new URL(request.url, "http://localhost").pathname.replace(/\/+$/, "") || "/";
+  const pagePath = pathname === "/"
+    ? indexPath
+    : pathname === "/draw" || pathname === "/draw.html"
+      ? drawPath
+      : null;
+  if (!pagePath) {
+    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Not found");
     return;
   }
-  response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-  response.end("Not found");
+
+  fs.readFile(pagePath, (error, content) => {
+    if (error) {
+      response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Could not load the page.");
+      console.error("Failed to read page:", error);
+      return;
+    }
+    response.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff"
+    });
+    response.end(content);
+  });
 });
 
 const websocketServer = new WebSocketServer({
@@ -74,7 +81,7 @@ websocketServer.on("connection", (socket) => {
     };
     drawings.push(drawing);
     if (drawings.length > MAX_DRAWINGS) drawings.shift();
-    broadcast({ type: "added" });
+    socket.send(JSON.stringify({ type: "added" }));
     broadcast({ type: "gallery", drawings });
   });
 });

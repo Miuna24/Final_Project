@@ -1,6 +1,6 @@
 # Little Big Gallery
 
-A small shared drawing page. Open the gallery on the main screen and `/draw` on each participant's device. Drawings appear in the gallery when someone chooses **Add to gallery**.
+A shared drawing gallery with separate pages. Keep `/` open on the forest display and share `/draw` with participants. Each person can draw independently; a submission appears in the forest for everyone.
 
 The main display is a wordless woodland scene where drawings drift around the screen. New drawings use transparent backgrounds so their marks blend into the environment.
 
