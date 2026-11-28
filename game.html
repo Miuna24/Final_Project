@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11142b">
+  <title>Starlit Wish — A Card Game</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+      color: #f8f4ff;
+      background: #101329;
+      --ink: #171735;
+      --night: #11142b;
+      --panel: rgba(31, 33, 65, .88);
+      --panel-border: rgba(207, 194, 255, .17);
+      --lavender: #c9b8ff;
+      --gold: #ffe77a;
+      --muted: #b7b6d2;
+      --pink: #f5b5e5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% -18%, rgba(108, 88, 172, .38), transparent 49%),
+        radial-gradient(ellipse at 85% 80%, rgba(44, 80, 122, .16), transparent 42%),
+        #101329;
+    }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    .app-shell { width: min(1420px, 100%); margin: 0 auto; padding: 18px 26px 34px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; box-shadow: 0 0 26px #ddbd784d; }
+    .brand-name { font-family: Georgia, serif; font-size: 19px; letter-spacing: .03em; }
+    .brand-kicker { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .2em; margin-top: 3px; }
+    .top-actions { display: flex; gap: 9px; }
+    .quiet-button, .primary-button, .secondary-button, .text-button {
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      padding: 10px 17px;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .quiet-button, .secondary-button { background: rgba(255,255,255,.055); color: #e7e1ff; }
+    .quiet-button:hover, .secondary-button:hover { background: rgba(255,255,255,.12); border-color: #b5a3f4; transform: translateY(-1px); }
+    .primary-button { background: linear-gradient(135deg, #f8d77c, #eab9de); color: #241a3e; border: 0; font-weight: 750; box-shadow: 0 9px 26px #c19ad82a; }
+    .primary-button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    .primary-button:disabled { opacity: .46; cursor: not-allowed; transform: none; }
+    .text-button { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 8px; }
+    .text-button:hover { color: white; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #ffe77a; outline-offset: 3px; }
+    .screen[hidden], [hidden] { display: none !important; }
+
+    .welcome {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(330px, .75fr);
+      align-items: center;
+      gap: clamp(32px, 7vw, 105px);
+      min-height: min(740px, calc(100vh - 105px));
+      padding: 28px clamp(4px, 5vw, 72px) 60px;
+    }
+    .welcome-copy { max-width: 650px; }
+    .eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: .2em; font-weight: 700; font-size: 11px; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; letter-spacing: -.04em; font-size: clamp(52px, 8vw, 98px); line-height: .96; margin: 18px 0 20px; }
+    h1 span { color: #dfc9ff; font-style: italic; }
+    .welcome-copy > p { max-width: 530px; color: #d0cee0; line-height: 1.7; font-size: 16px; }
+    .feature-row { display: flex; flex-wrap: wrap; gap: 9px; margin: 25px 0 30px; }
+    .feature-pill { padding: 8px 12px; border: 1px solid var(--panel-border); border-radius: 30px; color: #ded8f2; font-size: 12px; background: #ffffff08; }
+    .setup-card { background: linear-gradient(155deg, #26274b, #1d203b); border: 1px solid var(--panel-border); border-radius: 20px; padding: 24px; box-shadow: 0 18px 55px #00000028; }
+    .setup-card h2 { margin: 0 0 7px; font-family: Georgia, serif; font-size: 23px; font-weight: 500; }
+    .setup-help { margin: 0 0 19px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .field-label { display: block; color: #d9d4eb; font-size: 12px; font-weight: 650; margin: 15px 0 7px; }
+    .setup-card select, .name-input {
+      width: 100%; color: #f8f4ff; border: 1px solid #ffffff24; background: #13162e; border-radius: 10px; padding: 11px 12px;
+    }
+    .name-list { display: grid; gap: 8px; }
+    .setup-card .primary-button { width: 100%; margin-top: 20px; padding-block: 13px; }
+    .cover-stage { position: relative; display: grid; place-items: center; min-height: 470px; }
+    .cover-glow { position: absolute; width: min(430px, 80vw); aspect-ratio: 1; background: radial-gradient(circle, #ffdb9c35, #a9a0ff12 40%, transparent 70%); filter: blur(8px); }
+    .cover-card { position: relative; width: clamp(220px, 27vw, 310px); border-radius: 13px; transform: rotate(5deg); box-shadow: 0 24px 70px #0008, 0 0 55px #ddd1ff24; }
+    .cover-note { position: absolute; right: 2%; bottom: 4%; padding: 12px 15px; border: 1px solid #ffffff24; border-radius: 12px; background: #191a35e8; color: #dfd9f3; font-family: Georgia, serif; font-style: italic; box-shadow: 0 12px 35px #0005; }
+
+    .game-topline { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin: 10px 0 18px; }
+    .game-title { margin: 0; font: 500 29px Georgia, serif; }
+    .turn-label { color: var(--gold); font-size: 12px; letter-spacing: .04em; margin-top: 5px; }
+    .turn-label strong { color: white; }
+    .scoreboard { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-bottom: 15px; }
+    .player-tile { position: relative; min-width: 0; border: 1px solid var(--panel-border); background: #ffffff08; border-radius: 12px; padding: 11px 13px; overflow: hidden; }
+    .player-tile.active { border-color: #ffe77a9c; background: #f9d87912; box-shadow: inset 0 0 0 1px #ffe77a26; }
+    .player-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 700; }
+    .player-stats { display: flex; align-items: center; gap: 9px; margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .stars-number { color: var(--gold); font-weight: 750; }
+    .score-stars { color: #a7a3c4; letter-spacing: 1px; white-space: nowrap; font-size: 10px; }
+    .score-stars .earned { color: var(--gold); }
+    .table-panel { border: 1px solid var(--panel-border); border-radius: 19px; background: radial-gradient(ellipse at 50% 30%, #42416d66, #252744 55%, #20223d); padding: 17px clamp(12px, 2.4vw, 30px) 20px; box-shadow: inset 0 1px #ffffff08, 0 18px 46px #00000018; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 11px; }
+    .section-heading h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .14em; color: #d6d2eb; }
+    .section-heading span { color: var(--muted); font-size: 11px; }
+    .wish-row { display: flex; justify-content: center; gap: clamp(9px, 2vw, 23px); min-height: 148px; }
+    .wish-slot { display: grid; place-items: center; min-width: 0; width: min(15vw, 112px); position: relative; }
+    .wish-card { display: block; width: 100%; height: auto; border-radius: 7px; box-shadow: 0 8px 18px #0809188c; }
+    .wish-empty { width: 100%; aspect-ratio: .714; border: 1px dashed #ffffff2a; border-radius: 8px; display: grid; place-items: center; color: #a8a4c0; font-size: 11px; }
+    .wish-slot.claimable::after { content: "READY"; position: absolute; top: -5px; right: -9px; border-radius: 99px; padding: 3px 6px; background: var(--gold); color: #352446; font-size: 8px; letter-spacing: .06em; font-weight: 900; box-shadow: 0 2px 8px #0005; }
+    .table-center { display: flex; justify-content: center; align-items: center; gap: clamp(30px, 8vw, 96px); padding: 15px 0 12px; }
+    .draw-pile, .discard-pile { width: clamp(80px, 12vw, 126px); text-align: center; }
+    .pile-card { display: block; width: 100%; border-radius: 8px; }
+    .draw-button { width: 100%; border: 0; padding: 0; background: transparent; cursor: pointer; border-radius: 10px; }
+    .draw-button .pile-card { box-shadow: 0 9px 22px #090a1a99; transition: transform .18s ease, box-shadow .18s ease; }
+    .draw-button:hover .pile-card { transform: translateY(-5px) rotate(-2deg); box-shadow: 0 15px 28px #090a1a99; }
+    .draw-button:disabled { opacity: .45; cursor: not-allowed; }
+    .pile-count { display: inline-block; margin-top: 7px; color: #e0dcef; font-size: 11px; }
+    .pile-caption { color: #aaa7c4; font-size: 10px; margin-top: 4px; letter-spacing: .1em; text-transform: uppercase; }
+    .discard-empty { width: 100%; aspect-ratio: .714; border: 1px dashed #ffffff31; border-radius: 8px; display: grid; place-items: center; color: #9c9ab7; font-size: 11px; }
+    .collection-panel { margin-top: 15px; border: 1px solid var(--panel-border); background: var(--panel); border-radius: 16px; padding: 16px 18px; }
+    .collection-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .collection-title h3 { margin: 0; font: 500 19px Georgia, serif; }
+    .collection-summary { color: var(--muted); font-size: 11px; text-align: right; }
+    .collection-cards { display: flex; align-items: flex-start; gap: 9px; min-height: 120px; padding: 13px 1px 5px; overflow-x: auto; scrollbar-color: #7772ad transparent; }
+    .owned-card { flex: 0 0 70px; position: relative; }
+    .owned-card img { width: 70px; display: block; border-radius: 5px; box-shadow: 0 4px 11px #08091888; }
+    .owned-card span { display: block; margin-top: 4px; text-align: center; font-size: 9px; color: #d6d2e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wild-card { flex: 0 0 58px; width: 58px; height: 81px; border: 1px solid #d5c6ff8c; border-radius: 7px; display: grid; place-items: center; background: linear-gradient(145deg,#a8c9ef,#efb9dc); color: #222347; font: italic 23px Georgia,serif; box-shadow: 0 4px 11px #08091888; }
+    .collection-empty { display: grid; place-items: center; width: 100%; min-height: 94px; color: #a7a4c0; font: italic 14px Georgia, serif; }
+    .game-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .48fr); gap: 13px; margin-top: 13px; }
+    .table-actions, .activity { border: 1px solid var(--panel-border); border-radius: 13px; background: #ffffff07; padding: 12px 15px; }
+    .table-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .table-actions p { margin: 0; color: #c3c0d8; font-size: 12px; line-height: 1.5; }
+    .table-actions .primary-button { flex: 0 0 auto; }
+    .action-buttons { display: flex; align-items: center; gap: 8px; }
+    .activity h3 { margin: 0 0 6px; font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--muted); }
+    .activity-line { min-height: 18px; color: #ddd9ed; font-size: 11px; line-height: 1.5; }
+
+    .market-area { margin-top: 15px; padding: 12px; border: 1px solid #ffe77a4a; border-radius: 14px; background: #ffe77a0b; }
+    .market-area .section-heading { margin-bottom: 10px; }
+    .market-row { display: flex; justify-content: center; gap: 15px; }
+    .market-card { width: clamp(75px, 10vw, 98px); padding: 0; border: 0; background: transparent; cursor: pointer; transition: transform .18s ease; }
+    .market-card:hover { transform: translateY(-5px) rotate(-1deg); }
+    .market-card img { display: block; width: 100%; border-radius: 6px; box-shadow: 0 5px 15px #0007; }
+    .draft-prompt { color: var(--gold); font-size: 11px; font-weight: 700; }
+
+    .modal-backdrop, .pass-overlay, .win-overlay {
+      position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+      padding: 20px; background: rgba(8, 9, 25, .79); backdrop-filter: blur(9px);
+    }
+    .modal-card, .pass-card, .win-card {
+      width: min(570px, 100%); max-height: min(88vh, 760px); overflow-y: auto;
+      border: 1px solid #d7c8ff47; border-radius: 20px; padding: 24px;
+      background: linear-gradient(150deg,#2c2d52,#191c37); box-shadow: 0 25px 90px #0008;
+    }
+    .modal-card h2, .pass-card h2, .win-card h2 { font: 500 26px Georgia,serif; margin: 0 0 8px; }
+    .modal-copy, .pass-card p, .win-card p { color: #cfccdf; font-size: 13px; line-height: 1.6; margin: 0 0 17px; }
+    .modal-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+    .modal-option { border: 1px solid #ffffff22; border-radius: 12px; background: #ffffff09; padding: 9px; cursor: pointer; text-align: left; }
+    .modal-option:hover { border-color: #ffe77a99; background: #ffe77a12; }
+    .modal-option img { display: block; width: min(100%, 105px); margin: 0 auto 7px; border-radius: 5px; }
+    .modal-option strong { display: block; font-size: 12px; }
+    .modal-option small { display: block; color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .pass-card, .win-card { max-width: 430px; text-align: center; }
+    .pass-card img { width: 84px; border-radius: 7px; margin: 4px 0 13px; box-shadow: 0 8px 25px #0006; }
+    .pass-card .primary-button, .win-card .primary-button { min-width: 170px; }
+    .win-card .winner-stars { color: var(--gold); font: 36px Georgia,serif; margin: 10px 0 18px; }
+    .snackbar { position: fixed; z-index: 30; left: 50%; bottom: 22px; transform: translate(-50%, 15px); padding: 11px 17px; border: 1px solid #ffffff2c; border-radius: 40px; background: #242646; color: #f4edff; font-size: 12px; box-shadow: 0 8px 30px #0007; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+    .snackbar.visible { opacity: 1; transform: translate(-50%, 0); }
+    .rules-list { color: #d5d2e7; font-size: 13px; line-height: 1.65; padding-left: 20px; }
+    .rules-list li { margin-bottom: 8px; }
+    .small-note { color: #aaa7c3; font-size: 11px; line-height: 1.5; }
+    .sound-toggle { min-width: 41px; padding-inline: 12px; }
+
+    @media (max-width: 850px) {
+      .welcome { grid-template-columns: 1fr; min-height: auto; padding-top: 24px; }
+      .cover-stage { grid-row: 1; min-height: 300px; }
+      .cover-card { width: clamp(160px, 24vw, 220px); }
+      .cover-note { right: 12%; bottom: 0; }
+      .welcome-copy { max-width: 680px; }
+      .game-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .app-shell { padding: 13px 13px 24px; }
+      .topbar { margin-bottom: 10px; }
+      .brand-mark { width: 34px; height: 34px; }
+      .brand-name { font-size: 16px; }
+      .top-actions { gap: 3px; }
+      .quiet-button { padding: 8px 11px; font-size: 12px; }
+      .welcome { gap: 14px; padding: 8px 3px 30px; }
+      .cover-stage { min-height: 235px; }
+      .cover-card { width: 155px; }
+      .cover-note { right: 3%; bottom: 3px; font-size: 12px; }
+      h1 { font-size: 58px; margin: 14px 0; }
+      .welcome-copy > p { font-size: 14px; }
+      .setup-card { padding: 19px; }
+      .game-topline { align-items: center; margin: 4px 0 12px; }
+      .game-title { font-size: 25px; }
+      .scoreboard { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+      .player-tile { padding: 9px 10px; }
+      .table-panel { border-radius: 15px; padding: 13px 10px 14px; }
+      .wish-row { min-height: 112px; }
+      .wish-slot { width: min(21vw, 85px); }
+      .table-center { gap: 38px; padding: 12px 0 8px; }
+      .draw-pile, .discard-pile { width: 83px; }
+      .collection-panel { padding: 13px 12px; }
+      .collection-title h3 { font-size: 17px; }
+      .owned-card { flex-basis: 60px; }
+      .owned-card img { width: 60px; }
+      .market-row { gap: 9px; }
+      .market-card { width: min(19vw, 76px); }
+      .table-actions { align-items: stretch; flex-direction: column; }
+      .action-buttons { width: 100%; }
+      .action-buttons button { flex: 1; }
+      .table-actions .primary-button { width: 100%; }
+      .modal-card, .pass-card, .win-card { padding: 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-mark" src="assets/cards/back.png" alt="">
+        <div><div class="brand-name">Starlit Wish</div><div class="brand-kicker">A little luck, a little magic</div></div>
+      </div>
+      <div class="top-actions">
+        <button class="quiet-button" id="rules-button" type="button">How to play</button>
+        <button class="quiet-button sound-toggle" id="sound-button" type="button" aria-label="Toggle sound">♫</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="screen welcome" id="setup-screen">
+        <div class="welcome-copy">
+          <div class="eyebrow">A cozy card game for 2–4 players</div>
+          <h1>Make a wish.<br><span>Find your stars.</span></h1>
+          <p>Collect cake, frosting, berries, and little bits of magic. Complete a wish, earn its stars, and be the first to reach ten.</p>
+          <div class="feature-row"><span class="feature-pill">✦ Pass &amp; play</span><span class="feature-pill">✦ Original card art</span><span class="feature-pill">✦ One shared device</span></div>
+          <div class="setup-card">
+            <h2>Gather your players</h2>
+            <p class="setup-help">Take turns on the same screen. Your hand stays tucked away when it is someone else’s turn.</p>
+            <label class="field-label" for="player-count">Number of players</label>
+            <select id="player-count">
+              <option value="2">2 players</option><option value="3">3 players</option><option value="4" selected>4 players</option>
+            </select>
+            <div class="field-label">Player names</div>
+            <div class="name-list" id="name-list"></div>
+            <button class="primary-button" id="start-button" type="button">Begin the game <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+        <div class="cover-stage" aria-hidden="true">
+          <div class="cover-glow"></div>
+          <img class="cover-card" src="assets/cards/back.png" alt="">
+          <div class="cover-note">Your next wish is waiting ✦</div>
+        </div>
+      </section>
+
+      <section class="screen" id="game-screen" hidden>
+        <div class="game-topline">
+          <div><h1 class="game-title">The wishing table</h1><div class="turn-label" id="turn-label"></div></div>
+          <button class="text-button" id="new-game-button" type="button">New game</button>
+        </div>
+        <div class="scoreboard" id="scoreboard" aria-label="Player scores"></div>
+        <section class="table-panel" aria-label="Game table">
+          <div class="section-heading"><h3>Open wishes</h3><span>Collect the pictured items to earn stars</span></div>
+          <div class="wish-row" id="wish-row"></div>
+          <div class="table-center">
+            <div class="draw-pile">
+              <button class="draw-button" id="draw-button" type="button" aria-label="Draw a card">
+                <img class="pile-card" src="assets/cards/back.png" alt="">
+              </button>
+              <div class="pile-count" id="deck-count">0 cards</div><div class="pile-caption">Draw pile</div>
+            </div>
+            <div class="discard-pile">
+              <div id="discard-card"></div><div class="pile-count" id="discard-count">0 cards</div><div class="pile-caption">Stardust pile</div>
+            </div>
+          </div>
+        </section>
+        <section class="market-area" id="market-area" hidden>
+          <div class="section-heading"><h3>Choose your first card</h3><span class="draft-prompt" id="draft-prompt"></span></div>
+          <div class="market-row" id="market-row"></div>
+        </section>
+        <section class="collection-panel" aria-live="polite">
+          <div class="collection-title">
+            <h3 id="collection-heading">Your collection</h3>
+            <div class="collection-summary" id="collection-summary"></div>
+          </div>
+          <div class="collection-cards" id="collection-cards"></div>
+        </section>
+        <div class="game-footer">
+          <div class="table-actions">
+            <p id="action-hint">Pick a card to get started.</p>
+            <div class="action-buttons">
+              <button class="secondary-button" id="claim-button" type="button" hidden>Claim a wish ✦</button>
+              <button class="primary-button" id="turn-button" type="button" hidden>End turn <span aria-hidden="true">→</span></button>
+            </div>
+          </div>
+          <aside class="activity"><h3>Wish journal</h3><div id="activity-lines"></div></aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="pass-overlay" id="pass-overlay" hidden>
+    <div class="pass-card">
+      <img src="assets/cards/back.png" alt="">
+      <div class="eyebrow" id="pass-eyebrow">Pass the device</div>
+      <h2 id="pass-title">Ready?</h2>
+      <p id="pass-copy">Make sure it is your turn before continuing.</p>
+      <button class="primary-button" id="pass-button" type="button">I’m ready</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title"></h2>
+      <p class="modal-copy" id="modal-copy"></p>
+      <div class="modal-options" id="modal-options"></div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </section>
+  </div>
+
+  <div class="win-overlay" id="win-overlay" hidden>
+    <div class="win-card">
+      <div class="eyebrow">The stars have aligned</div>
+      <h2 id="winner-title">A wish came true!</h2>
+      <p id="winner-copy"></p>
+      <div class="winner-stars">✦ ✦ ✦</div>
+      <button class="primary-button" id="play-again-button" type="button">Play again</button>
+    </div>
+  </div>
+  <div class="snackbar" id="snackbar" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const CARD_PATH = "assets/cards/";
+      const TARGET_STARS = 10;
+      const itemNames = {
+        cake: "Cake Layers", cream: "Cream",
+        "frosting-pink": "Pink Frosting", "frosting-blue": "Blue Frosting", "frosting-purple": "Purple Frosting",
+        "berries-strawberry": "Strawberries", "berries-blueberry": "Blueberries", "berries-raspberry": "Raspberries",
+        candle: "Candle"
+      };
+      const wishes = [
+        { id: "wish-01", stars: 3, items: ["cake", "frosting-purple", "cream"] },
+        { id: "wish-02", stars: 3, items: ["cake", "frosting-blue", "cream"] },
+        { id: "wish-03", stars: 3, items: ["cake", "frosting-pink", "cream"] },
+        { id: "wish-04", stars: 4, items: ["cake", "frosting-pink", "cream", "berries-raspberry"] },
+        { id: "wish-05", stars: 5, items: ["cake", "frosting-purple", "cream", "berries-raspberry", "candle"] },
+        { id: "wish-06", stars: 4, items: ["cake", "frosting-purple", "cream", "berries-raspberry"] },
+        { id: "wish-07", stars: 4, items: ["cake", "frosting-blue", "cream", "berries-blueberry"] },
+        { id: "wish-08", stars: 4, items: ["cake", "frosting-pink", "cream", "berries-raspberry"] },
+        { id: "wish-09", stars: 5, items: ["cake", "frosting-purple", "cream", "berries-strawberry", "candle"] },
+        { id: "wish-10", stars: 5, items: ["cake", "frosting-blue", "cream", "berries-blueberry", "candle"] }
+      ];
+      const actionNames = {
+        aligned: "The Stars have Aligned!",
+        starlight: "Shining Starlight!",
+        moonlight: "Moonlight Masquerade!",
+        blessing: "A Blessing from the Heavens",
+        birthday: "A Benevolent Birthday!",
+        shootingStar: "Shooting Star!"
+      };
+      const state = {
+        phase: "setup", players: [], activeIndex: 0, draftIndex: 0, deck: [], discard: [],
+        market: [], wishDeck: [], wishDiscard: [], openWishes: [], log: [], busy: false, sound: true
+      };
+      let toastTimer;
+      let audioContext;
+
+      const $ = function (selector) { return document.querySelector(selector); };
+      const setupScreen = $("#setup-screen");
+      const gameScreen = $("#game-screen");
+      const nameList = $("#name-list");
+
+      function makeCard(kind, id, extra) {
+        return Object.assign({ id: kind + "-" + id, kind: kind }, extra || {});
+      }
+
+      async function claimWish() {
+        if (state.busy || state.phase !== "playing") return;
+        state.busy = true;
+        renderGame();
+        await offerCompletedWishes(state.players[state.activeIndex]);
+        if (state.phase === "playing") {
+          state.busy = false;
+          renderGame();
+        }
+      }
+
+      function shuffled(list) {
+        const cards = list.slice();
+        for (let i = cards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cards[i], cards[j]] = [cards[j], cards[i]];
+        }
+        return cards;
+      }
+
+      function createMainDeck() {
+        const cards = [];
+        let nextId = 0;
+        function add(kind, count) {
+          for (let i = 0; i < count; i++) cards.push(makeCard(kind, nextId++));
+        }
+        add("cake", 15);
+        add("cream", 8);
+        add("frosting-pink", 4);
+        add("frosting-blue", 3);
+        add("frosting-purple", 3);
+        add("berries-strawberry", 2);
+        add("berries-blueberry", 2);
+        add("berries-raspberry", 2);
+        add("candle", 4);
+        add("aligned", 3);
+        add("starlight", 4);
+        add("moonlight", 2);
+        add("blessing", 4);
+        add("birthday", 5);
+        add("shootingStar", 1);
+        return shuffled(cards);
+      }
+
+      function nextCardId() {
+        return "extra-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      }
+
+      function makePlayers(names) {
+        return names.map(function (name, index) {
+          return { id: index, name: name, stars: 0, collection: [], wilds: [] };
+        });
+      }
+
+      function renderNameFields() {
+        const count = Number($("#player-count").value);
+        const defaults = ["Luna", "Nova", "Milo", "Skye"];
+        nameList.replaceChildren();
+        for (let i = 0; i < count; i++) {
+          const input = document.createElement("input");
+          input.className = "name-input";
+          input.maxLength = 18;
+          input.autocomplete = "off";
+          input.setAttribute("aria-label", "Player " + (i + 1) + " name");
+          input.value = defaults[i];
+          input.placeholder = "Player " + (i + 1);
+          nameList.append(input);
+        }
+      }
+
+      async function startGame() {
+        const names = Array.from(nameList.querySelectorAll("input")).map(function (input, i) {
+          return input.value.trim() || "Player " + (i + 1);
+        });
+        state.phase = "draft";
+        state.players = makePlayers(names);
+        state.activeIndex = 0;
+        state.draftIndex = 0;
+        state.deck = createMainDeck();
+        state.discard = [];
+        state.market = state.deck.splice(0, 4);
+        state.wishDeck = shuffled(wishes);
+        state.wishDiscard = [];
+        state.openWishes = state.wishDeck.splice(0, 3);
+        state.log = [];
+        state.busy = true;
+        setupScreen.hidden = true;
+        gameScreen.hidden = false;
+        renderGame();
+        const firstPlayerId = await showModal(
+          "Who won Rock, Paper, Scissors?",
+          "Choose the winner of your opening showdown. They get the first pick and start the game.",
+          state.players.map(function (player) {
+            return { title: player.name, detail: "First to pick a starter card", value: player.id };
+          }),
+          []
+        );
+        const firstIndex = state.players.findIndex(function (player) { return player.id === firstPlayerId; });
+        if (firstIndex > 0) state.players = state.players.slice(firstIndex).concat(state.players.slice(0, firstIndex));
+        state.activeIndex = 0;
+        state.draftIndex = 0;
+        state.busy = false;
+        renderGame();
+        showPass(state.players[0], "Starter cards", "Choose one card from the table. Your first card begins your collection.");
+        playSound("start");
+      }
+
+      function showPass(player, eyebrow, copy) {
+        if (!player) return;
+        $("#pass-eyebrow").textContent = eyebrow || "Pass the device";
+        $("#pass-title").textContent = "Hand it to " + player.name;
+        $("#pass-copy").textContent = copy || "When everyone is ready, take your turn.";
+        $("#pass-overlay").hidden = false;
+      }
+
+      function dismissPass() {
+        $("#pass-overlay").hidden = true;
+        renderGame();
+      }
+
+      function renderGame() {
+        if (!state.players.length) return;
+        const player = state.players[state.phase === "draft" ? state.draftIndex : state.activeIndex];
+        $("#turn-label").innerHTML = state.phase === "draft"
+          ? "Starter pick · <strong>" + escapeHtml(player.name) + "</strong> chooses first"
+          : state.phase === "gameover"
+            ? "The wishing table is quiet for now"
+            : "It’s <strong>" + escapeHtml(player.name) + "</strong>’s turn";
+        renderScoreboard();
+        renderWishes();
+        renderDeckAndDiscard();
+        renderCollection(player);
+        renderMarket();
+        renderControls();
+        renderLog();
+      }
+
+      function renderScoreboard() {
+        const board = $("#scoreboard");
+        board.replaceChildren();
+        state.players.forEach(function (player, index) {
+          const tile = document.createElement("div");
+          tile.className = "player-tile" + ((state.phase === "draft" ? index === state.draftIndex : index === state.activeIndex) ? " active" : "");
+          const name = document.createElement("div");
+          name.className = "player-name";
+          name.textContent = player.name;
+          const stats = document.createElement("div");
+          stats.className = "player-stats";
+          const score = document.createElement("span");
+          score.className = "stars-number";
+          score.textContent = "✦ " + player.stars + " / " + TARGET_STARS;
+          const stars = document.createElement("span");
+          stars.className = "score-stars";
+          stars.innerHTML = '<span class="earned">' + "✦".repeat(Math.min(player.stars, 10)) + "</span>" + "✦".repeat(Math.max(0, 10 - player.stars));
+          stats.append(score, stars);
+          tile.append(name, stats);
+          board.append(tile);
+        });
+      }
+
+      function canClaim(player, wish) {
+        let wildNeeded = 0;
+        wish.items.forEach(function (item) {
+          if (!player.collection.some(function (card) { return card.kind === item; })) wildNeeded++;
+        });
+        return wildNeeded <= player.wilds.length;
+      }
+
+      function renderWishes() {
+        const row = $("#wish-row");
+        row.replaceChildren();
+        const player = state.players[state.phase === "draft" ? state.draftIndex : state.activeIndex];
+        state.openWishes.forEach(function (wish) {
+          const slot = document.createElement("div");
+          slot.className = "wish-slot" + (player && canClaim(player, wish) ? " claimable" : "");
+          const img = document.createElement("img");
+          img.className = "wish-card";
+          img.src = CARD_PATH + wish.id + ".png";
+          img.alt = wish.stars + " star wish";
+          img.title = wish.stars + " stars";
+          slot.append(img);
+          row.append(slot);
+        });
+        for (let i = state.openWishes.length; i < 3; i++) {
+          const empty = document.createElement("div");
+          empty.className = "wish-empty";
+          empty.textContent = "A wish awaits";
+          row.append(empty);
+        }
+      }
+
+      function renderDeckAndDiscard() {
+        $("#deck-count").textContent = state.deck.length + (state.deck.length === 1 ? " card" : " cards");
+        $("#discard-count").textContent = state.discard.length + (state.discard.length === 1 ? " card" : " cards");
+        const discard = $("#discard-card");
+        discard.replaceChildren();
+        if (state.discard.length) {
+          const card = state.discard[state.discard.length - 1];
+          const img = document.createElement("img");
+          img.className = "pile-card";
+          img.src = CARD_PATH + imageName(card) + ".png";
+          img.alt = "Top card in the stardust pile";
+          discard.append(img);
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "discard-empty";
+          empty.textContent = "Empty";
+          discard.append(empty);
+        }
+      }
+
+      function renderCollection(player) {
+        $("#collection-heading").textContent = player.name + "’s collection";
+        $("#collection-summary").textContent = player.collection.length + " item" + (player.collection.length === 1 ? "" : "s") +
+          (player.wilds.length ? " · " + player.wilds.length + " wish card" + (player.wilds.length === 1 ? "" : "s") : "");
+        const row = $("#collection-cards");
+        row.replaceChildren();
+        player.collection.forEach(function (card) {
+          const figure = document.createElement("div");
+          figure.className = "owned-card";
+          const img = document.createElement("img");
+          img.src = CARD_PATH + imageName(card) + ".png";
+          img.alt = itemNames[card.kind];
+          const label = document.createElement("span");
+          label.textContent = itemNames[card.kind];
+          figure.append(img, label);
+          row.append(figure);
+        });
+        for (let i = 0; i < player.wilds.length; i++) {
+          const wild = document.createElement("div");
+          wild.className = "wild-card";
+          wild.setAttribute("aria-label", "A Benevolent Birthday wild card");
+          wild.textContent = "✦";
+          row.append(wild);
+        }
+        if (!player.collection.length && !player.wilds.length) {
+          const empty = document.createElement("div");
+          empty.className = "collection-empty";
+          empty.textContent = "Your little collection will appear here.";
+          row.append(empty);
+        }
+      }
+
+      function renderMarket() {
+        const area = $("#market-area");
+        const isDraft = state.phase === "draft";
+        area.hidden = !isDraft;
+        if (!isDraft) return;
+        $("#draft-prompt").textContent = state.players[state.draftIndex].name + " · pick 1";
+        const row = $("#market-row");
+        row.replaceChildren();
+        state.market.forEach(function (card) {
+          const button = document.createElement("button");
+          button.className = "market-card";
+          button.type = "button";
+          button.setAttribute("aria-label", card.kind === "birthday" ? "Choose a face-down card" : "Choose " + cardTitle(card));
+          const img = document.createElement("img");
+          img.src = CARD_PATH + (card.kind === "birthday" ? "back" : imageName(card)) + ".png";
+          img.alt = card.kind === "birthday" ? "Face-down card" : cardTitle(card);
+          button.append(img);
+          button.addEventListener("click", function () { chooseStarter(card); });
+          row.append(button);
+        });
+      }
+
+      function renderControls() {
+        const isTurn = state.phase === "playing" && !state.busy && $("#pass-overlay").hidden && $("#modal-backdrop").hidden;
+        const isDraft = state.phase === "draft";
+        const player = state.players[state.activeIndex];
+        const hasClaimableWish = player && state.openWishes.some(function (wish) { return canClaim(player, wish); });
+        $("#draw-button").disabled = !isTurn || (!state.deck.length && !state.discard.length);
+        $("#turn-button").hidden = !isTurn;
+        $("#turn-button").disabled = !isTurn;
+        $("#claim-button").hidden = !isTurn || !hasClaimableWish;
+        $("#action-hint").textContent = isDraft
+          ? "Choose one of the four face-up cards. Action cards play as soon as they are chosen."
+          : state.phase === "playing"
+            ? "Draw one card. Items join your collection; action cards happen right away."
+            : "The game is over. Start a new game whenever you’re ready.";
+      }
+
+      function renderLog() {
+        const lines = $("#activity-lines");
+        lines.replaceChildren();
+        const recent = state.log.slice(-3).reverse();
+        if (!recent.length) {
+          const line = document.createElement("div");
+          line.className = "activity-line";
+          line.textContent = "Your first wish is just beginning.";
+          lines.append(line);
+          return;
+        }
+        recent.forEach(function (entry) {
+          const line = document.createElement("div");
+          line.className = "activity-line";
+          line.textContent = entry;
+          lines.append(line);
+        });
+      }
+
+      function log(message) {
+        state.log.push(message);
+        if (state.log.length > 12) state.log.shift();
+        renderLog();
+      }
+
+      function imageName(card) {
+        return card.kind === "aligned" || card.kind === "starlight" || card.kind === "moonlight" ||
+          card.kind === "blessing" || card.kind === "birthday"
+          ? "action-" + card.kind
+          : card.kind === "shootingStar" ? "action-shooting-star" : card.kind;
+      }
+
+      function cardTitle(card) {
+        if (actionNames[card.kind]) return actionNames[card.kind];
+        return itemNames[card.kind] || "A card";
+      }
+
+      function isImmediateAction(card) {
+        return card.kind !== "birthday" && Boolean(actionNames[card.kind]);
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+        });
+      }
+
+      function addToDiscard(card) {
+        state.discard.push(card);
+      }
+
+      function discardPlayedAction(card) {
+        if (card.kind !== "shootingStar") addToDiscard(card);
+      }
+
+      function revealCard() {
+        if (!state.deck.length && state.discard.length) {
+          state.deck = shuffled(state.discard);
+          state.discard = [];
+          log("The stardust pile was shuffled back into the draw deck.");
+        }
+        const card = state.deck.pop();
+        renderDeckAndDiscard();
+        return card || null;
+      }
+
+      function drawWish() {
+        if (!state.wishDeck.length && state.wishDiscard.length) {
+          state.wishDeck = shuffled(state.wishDiscard);
+          state.wishDiscard = [];
+        }
+        return state.wishDeck.pop() || null;
+      }
+
+      function addItem(player, card) {
+        if (card.kind === "birthday") {
+          player.wilds.push(card);
+        } else {
+          player.collection.push(card);
+          log(player.name + " collected " + itemNames[card.kind] + ".");
+        }
+        renderGame();
+      }
+
+      function showModal(title, copy, options, actions) {
+        return new Promise(function (resolve) {
+          const backdrop = $("#modal-backdrop");
+          $("#modal-title").textContent = title;
+          $("#modal-copy").textContent = copy;
+          const optionRow = $("#modal-options");
+          const actionRow = $("#modal-actions");
+          optionRow.replaceChildren();
+          actionRow.replaceChildren();
+          (options || []).forEach(function (option) {
+            const button = document.createElement("button");
+            button.className = "modal-option";
+            button.type = "button";
+            if (option.image) {
+              const img = document.createElement("img");
+              img.src = CARD_PATH + option.image + ".png";
+              img.alt = "";
+              button.append(img);
+            }
+            const name = document.createElement("strong");
+            name.textContent = option.title;
+            button.append(name);
+            if (option.detail) {
+              const detail = document.createElement("small");
+              detail.textContent = option.detail;
+              button.append(detail);
+            }
+            button.addEventListener("click", function () { close(option.value); });
+            optionRow.append(button);
+          });
+          (actions || []).forEach(function (action) {
+            const button = document.createElement("button");
+            button.className = action.primary ? "primary-button" : "secondary-button";
+            button.type = "button";
+            button.textContent = action.label;
+            button.addEventListener("click", function () { close(action.value); });
+            actionRow.append(button);
+          });
+          function close(value) {
+            backdrop.hidden = true;
+            resolve(value);
+            renderControls();
+          }
+          backdrop.hidden = false;
+          renderControls();
+        });
+      }
+
+      async function chooseStarter(card) {
+        if (state.busy || state.phase !== "draft") return;
+        state.busy = true;
+        state.market = state.market.filter(function (candidate) { return candidate.id !== card.id; });
+        await receiveCard(state.players[state.draftIndex], card, true);
+        state.draftIndex++;
+        state.busy = false;
+        if (state.draftIndex >= state.players.length) {
+          state.deck = state.deck.concat(state.market);
+          state.market = [];
+          state.phase = "playing";
+          state.activeIndex = 0;
+          renderGame();
+          showPass(state.players[0], "The wishing begins", "Your starter card is chosen. Draw from the deck to begin.");
+        } else {
+          renderGame();
+          showPass(state.players[state.draftIndex], "Starter cards", "Choose one card from the table. Your first card begins your collection.");
+        }
+      }
+
+      async function drawTurnCard() {
+        if (state.busy || state.phase !== "playing") return;
+        state.busy = true;
+        const player = state.players[state.activeIndex];
+        const card = revealCard();
+        if (!card) {
+          toast("There are no cards left to draw.");
+          state.busy = false;
+          renderGame();
+          return;
+        }
+        await receiveCard(player, card, false);
+        if (state.phase === "playing") {
+          state.busy = false;
+          renderGame();
+          $("#turn-button").focus();
+        }
+      }
+
+      async function receiveCard(player, card, isStarter) {
+        playSound("draw");
+        if (isImmediateAction(card)) {
+          log(player.name + " revealed " + actionNames[card.kind]);
+          discardPlayedAction(card);
+          await playAction(player, card);
+          renderGame();
+          return;
+        }
+        addItem(player, card);
+        await offerCompletedWishes(player);
+        if (!isStarter && state.phase === "playing") renderGame();
+      }
+
+      async function playAction(player, card) {
+        if (card.kind === "shootingStar") {
+          player.stars += 5;
+          log(player.name + " found a Shooting Star and gained 5 stars!");
+          playSound("star");
+          renderGame();
+          checkForWinner(player);
+          return;
+        }
+        if (card.kind === "aligned") {
+          await actionAligned(player);
+          return;
+        }
+        if (card.kind === "starlight") {
+          await actionStarlight(player);
+          return;
+        }
+        if (card.kind === "moonlight") {
+          state.wishDiscard.push.apply(state.wishDiscard, state.openWishes);
+          state.openWishes = [];
+          for (let i = 0; i < 3; i++) {
+            const wish = drawWish();
+            if (wish) state.openWishes.push(wish);
+          }
+          log(player.name + " replaced all the open wishes.");
+          toast("New wishes are shining on the table.");
+          renderGame();
+          return;
+        }
+        if (card.kind === "blessing") {
+          await actionBlessing(player);
+        }
+      }
+
+      async function actionAligned(player) {
+        const drawn = [];
+        for (let i = 0; i < 5; i++) {
+          const card = revealCard();
+          if (card) drawn.push(card);
+        }
+        if (!drawn.length) {
+          toast("The deck is empty. The stars will have to wait.");
+          return;
+        }
+        const options = drawn.map(function (card, index) {
+          return {
+            title: card.kind === "birthday" ? "Mystery card" : cardTitle(card),
+            image: card.kind === "birthday" ? "back" : imageName(card),
+            detail: "Choose this card to keep",
+            value: index
+          };
+        });
+        const picked = await showModal(
+          "The Stars have Aligned!",
+          player.name + ", choose one of the revealed cards. It will join your collection; the rest return to the bottom of the deck.",
+          options,
+          []
+        );
+        const kept = drawn[picked];
+        drawn.forEach(function (card, index) {
+          if (index !== picked) state.deck.unshift(card);
+        });
+        if (kept) {
+          if (isImmediateAction(kept)) {
+            discardPlayedAction(kept);
+            log(player.name + " chose to play " + actionNames[kept.kind] + ".");
+            await playAction(player, kept);
+          } else {
+            addItem(player, kept);
+            await offerCompletedWishes(player);
+          }
+        }
+        renderGame();
+      }
+
+      async function actionStarlight(player) {
+        for (let i = 0; i < 2; i++) {
+          const card = revealCard();
+          if (!card) {
+            toast("The draw deck is empty.");
+            break;
+          }
+          log(player.name + " drew a card with Shining Starlight.");
+          if (isImmediateAction(card)) {
+            discardPlayedAction(card);
+            await playAction(player, card);
+            if (state.phase === "gameover") return;
+          } else {
+            addItem(player, card);
+            await offerCompletedWishes(player);
+            if (state.phase === "gameover") return;
+          }
+        }
+        renderGame();
+      }
+
+      async function actionBlessing(player) {
+        const targets = state.players.filter(function (candidate) {
+          return candidate.id !== player.id && (candidate.collection.length || candidate.wilds.length);
+        });
+        if (!targets.length) {
+          log("There was no card to take with A Blessing from the Heavens.");
+          toast("No other player has a card to share yet.");
+          return;
+        }
+        const options = targets.map(function (target) {
+          return { title: target.name, detail: "Random card · " + (target.collection.length + target.wilds.length) + " available", value: target.id };
+        });
+        const targetId = await showModal(
+          "A Blessing from the Heavens",
+          player.name + ", choose a player. One of their cards will be chosen at random and added to your collection.",
+          options,
+          []
+        );
+        const target = state.players.find(function (candidate) { return candidate.id === targetId; });
+        if (!target) return;
+        const all = target.collection.map(function (card) { return { wild: false, card: card }; })
+          .concat(target.wilds.map(function (card) { return { wild: true, card: card }; }));
+        const taken = all[Math.floor(Math.random() * all.length)];
+        if (taken.wild) {
+          target.wilds.splice(target.wilds.indexOf(taken.card), 1);
+          player.wilds.push(taken.card);
+          log(player.name + " received a mysterious card from " + target.name + ".");
+          await offerCompletedWishes(player);
+        } else {
+          target.collection.splice(target.collection.indexOf(taken.card), 1);
+          player.collection.push(taken.card);
+          log(player.name + " received a random card from " + target.name + ".");
+          await offerCompletedWishes(player);
+        }
+        renderGame();
+      }
+
+      async function offerCompletedWishes(player) {
+        while (state.phase !== "gameover") {
+          const claimable = state.openWishes.filter(function (wish) { return canClaim(player, wish); });
+          if (!claimable.length) return;
+          const options = claimable.map(function (wish) {
+            return { title: "Claim " + wish.stars + " stars", image: wish.id, detail: wish.items.map(function (item) { return itemNames[item]; }).join(" · "), value: wish.id };
+          });
+          const picked = await showModal(
+            "A wish is within reach!",
+            player.name + ", turn in the pictured ingredients to earn stars. A birthday card can stand in for one missing item.",
+            options,
+            [{ label: "Not yet", value: null }]
+          );
+          if (!picked) return;
+          const wish = state.openWishes.find(function (candidate) { return candidate.id === picked; });
+          if (!wish || !canClaim(player, wish)) continue;
+          fulfillWish(player, wish);
+          if (state.phase === "gameover") return;
+        }
+      }
+
+      function fulfillWish(player, wish) {
+        let wildsToUse = 0;
+        wish.items.forEach(function (item) {
+          const index = player.collection.findIndex(function (card) { return card.kind === item; });
+          if (index === -1) wildsToUse++;
+          else state.discard.push(player.collection.splice(index, 1)[0]);
+        });
+        for (let i = 0; i < wildsToUse; i++) state.discard.push(player.wilds.pop());
+        player.stars += wish.stars;
+        state.openWishes.splice(state.openWishes.indexOf(wish), 1);
+        state.wishDiscard.push(wish);
+        const nextWish = drawWish();
+        if (nextWish) state.openWishes.push(nextWish);
+        log(player.name + " completed a " + wish.stars + "-star wish!");
+        toast(player.name + " earned " + wish.stars + " stars!");
+        playSound("star");
+        renderGame();
+        checkForWinner(player);
+      }
+
+      function checkForWinner(player) {
+        if (player.stars < TARGET_STARS) return false;
+        state.phase = "gameover";
+        state.busy = true;
+        renderGame();
+        $("#winner-title").textContent = player.name + " made a wish come true!";
+        $("#winner-copy").textContent = player.name + " reached " + player.stars + " stars and wins Starlit Wish.";
+        $("#win-overlay").hidden = false;
+        playSound("win");
+        return true;
+      }
+
+      function endTurn() {
+        if (state.phase !== "playing" || state.busy || !$("#pass-overlay").hidden) return;
+        state.activeIndex = (state.activeIndex + 1) % state.players.length;
+        renderGame();
+        showPass(state.players[state.activeIndex], "Pass the device", "The collection is face-up. Birthday wish cards stay hidden until their owner uses them.");
+      }
+
+      function toast(message) {
+        const node = $("#snackbar");
+        node.textContent = message;
+        node.classList.add("visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () { node.classList.remove("visible"); }, 2400);
+      }
+
+      function playSound(kind) {
+        if (!state.sound) return;
+        try {
+          const Audio = window.AudioContext || window.webkitAudioContext;
+          if (!Audio) return;
+          audioContext = audioContext || new Audio();
+          if (audioContext.state === "suspended") audioContext.resume();
+          const notes = kind === "win" ? [523, 659, 784] : kind === "star" ? [660, 880] : kind === "start" ? [392, 523] : [440];
+          notes.forEach(function (frequency, index) {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const start = audioContext.currentTime + index * .11;
+            oscillator.type = "sine";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(.0001, start);
+            gain.gain.exponentialRampToValueAtTime(kind === "draw" ? .025 : .05, start + .02);
+            gain.gain.exponentialRampToValueAtTime(.0001, start + .2);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start(start);
+            oscillator.stop(start + .22);
+          });
+        } catch (error) {
+          console.warn("Sound playback is unavailable:", error);
+        }
+      }
+
+      function showRules() {
+        const copy = document.createElement("ol");
+        copy.className = "rules-list";
+        [
+          "Rock, Paper, Scissors decides who starts. Deal three open wishes and four face-up starter cards; each player picks one in turn, and unused starters go to the bottom of the deck.",
+          "On your turn, draw one card. Keep item cards in your collection; action cards happen immediately. Birthday cards are kept hidden and can replace one missing item when claiming a wish.",
+          "Match every pictured item—including the frosting color and berry type—to claim a wish and earn its stars. The ingredients used are discarded, and the open wish is replaced.",
+          "The Stars have Aligned lets you keep one of five revealed cards. Shining Starlight draws two. Moonlight Masquerade replaces all open wishes. A Blessing steals a random card from another player.",
+          "A Shooting Star is worth five stars right away. The first player to reach ten or more stars wins."
+        ].forEach(function (text) {
+          const li = document.createElement("li");
+          li.textContent = text;
+          copy.append(li);
+        });
+        const backdrop = $("#modal-backdrop");
+        $("#modal-title").textContent = "How to play";
+        $("#modal-copy").textContent = "A quick guide to the wishing table.";
+        $("#modal-options").replaceChildren(copy);
+        const actions = $("#modal-actions");
+        actions.replaceChildren();
+        const close = document.createElement("button");
+        close.className = "primary-button";
+        close.type = "button";
+        close.textContent = "Got it";
+        close.addEventListener("click", function () { backdrop.hidden = true; renderControls(); });
+        actions.append(close);
+        backdrop.hidden = false;
+        renderControls();
+      }
+
+      function confirmNewGame() {
+        if (state.phase === "setup" || state.phase === "gameover") {
+          state.phase = "setup";
+          $("#win-overlay").hidden = true;
+          gameScreen.hidden = true;
+          setupScreen.hidden = false;
+          return;
+        }
+        showModal("Start a new game?", "The current table will be cleared and a fresh deck will be dealt.", [], [
+          { label: "Keep playing", value: false },
+          { label: "New game", value: true, primary: true }
+        ]).then(function (restart) {
+          if (restart) {
+            $("#modal-backdrop").hidden = true;
+            state.phase = "setup";
+            gameScreen.hidden = true;
+            setupScreen.hidden = false;
+            renderNameFields();
+          }
+        });
+      }
+
+      $("#player-count").addEventListener("change", renderNameFields);
+      $("#start-button").addEventListener("click", startGame);
+      $("#pass-button").addEventListener("click", dismissPass);
+      $("#draw-button").addEventListener("click", drawTurnCard);
+      $("#claim-button").addEventListener("click", claimWish);
+      $("#turn-button").addEventListener("click", endTurn);
+      $("#new-game-button").addEventListener("click", confirmNewGame);
+      $("#play-again-button").addEventListener("click", function () {
+        $("#win-overlay").hidden = true;
+        state.phase = "setup";
+        state.busy = false;
+        gameScreen.hidden = true;
+        setupScreen.hidden = false;
+      });
+      $("#rules-button").addEventListener("click", showRules);
+      $("#sound-button").addEventListener("click", function () {
+        state.sound = !state.sound;
+        this.textContent = state.sound ? "♫" : "♪";
+        this.setAttribute("aria-label", state.sound ? "Turn sound off" : "Turn sound on");
+        toast(state.sound ? "Sound on" : "Sound off");
+      });
+      renderNameFields();
+    }());
+  </script>
+</body>
+</html>
