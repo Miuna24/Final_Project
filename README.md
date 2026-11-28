@@ -1,18 +1,20 @@
-# Little Big Gallery
+# Starlit Wish
 
-A shared drawing gallery with separate pages. Keep `/` open on the forest display and share `/draw` with participants. Each person can draw independently; a submission appears in the forest for everyone.
+A pass-and-play card game for 2–4 players. Collect the pictured ingredients, complete wishes, and be the first player to earn 10 stars.
 
-The main display is a wordless woodland scene where drawings drift around the screen. New drawings use transparent backgrounds so their marks blend into the environment.
+## Run locally
 
-The drawing page includes pen, marker, spray, glow, and eraser brushes; line, rectangle, ellipse, and triangle tools; a fill bucket; and gradient strokes and shape fills.
+Requires Node.js. No package installation is needed.
 
-## Run it
+```powershell
+node server.mjs
+```
 
-1. In this folder, run `npm install`.
-2. Run `npm start`.
-3. Open `http://localhost:3000` on the main display.
-4. On phones connected to the same Wi-Fi, open `http://<computer-ip>:3000/draw`.
+Open [http://localhost:3000](http://localhost:3000) in a browser. Stop the server with `Ctrl+C`.
 
-To find this computer's local IP on Windows, run `ipconfig` and use the IPv4 Address for the active Wi-Fi network. If Windows Firewall prompts you, allow Node.js on your private network.
+## How to play
 
-Drawings are shared live and kept in server memory, up to 200 at a time. They are cleared when the server stops.
+- Rock, Paper, Scissors chooses who starts. Players then pick one of four face-up starter cards.
+- On each turn, draw a card. Item cards join your collection; action cards resolve immediately.
+- Match the frosting color and berry type shown on an open wish to claim its stars. Birthday cards are wild and stay hidden until used.
+- The first player to reach 10 or more stars wins.

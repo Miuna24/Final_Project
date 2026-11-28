@@ -12,7 +12,7 @@ const contentTypes = {
 
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url || "/", "http://localhost").pathname;
-  const requestedPath = pathname === "/" ? "/game.html" : decodeURIComponent(pathname);
+  const requestedPath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
   const filePath = resolve(root, "." + requestedPath);
 
   if (filePath !== root && !filePath.startsWith(root + sep)) {
